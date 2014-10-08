@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ArrayList;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +12,6 @@ namespace MultiThreadingFramework
     {
         private String serviceStopFile = "/opt/local/geocode/stop";
         private bool simulateDB = true;
-        private File simulFile;
         private String userDir;
         private String simulFileName;
         System.IO.StreamReader dbOutput = null;
@@ -33,7 +31,7 @@ namespace MultiThreadingFramework
         // ////////////////////////////////////////////
         private static int maxThreads = 11;
         private static int minThreads = 3;
-        private static int nbrThreadsInit = 5;
+        private static int nbrThreadsInit = 4;
         private bool stopping = false;
         long updateTimestamp;
         private static int requestsPerSecond = 22;
@@ -63,7 +61,7 @@ namespace MultiThreadingFramework
 
 
 
-	    public void run() {
+	    public void Orchestrate() {
 		    performInit();
 		    openDBConnection();
 		    int counter = 0;
@@ -71,16 +69,16 @@ namespace MultiThreadingFramework
 		    int wqLen = 0;
 
 		    // ////////////////////////////////////////////
-	        workerQueue = new ArrayBlockingQueue<InputDTO>(1024);
-	        resultQueue = new ArrayBlockingQueue<ServiceResult>(1024);
-		    workers = new ArrayList<MultiThreadWorker>(maxThreads);
+	        workerQueue = new ConcurrentQueue<InputDTO>() ;
+	        resultQueue = new ConcurrentQueue<ServiceResult>();
+		    workers = new List<MultiThreadWorker>(maxThreads);
 		    for (int i = 0; i < nbrThreadsInit; i++) {
-			    workers.add(new MultiThreadWorker("Worker "+ i, workerQueue, resultQueue));
+			    workers.Add(new MultiThreadWorker("Worker "+ i, workerQueue, resultQueue));
 		    }
 
 		    // ////////////////////////////////////////////
 		
-		    long currentTime  = System.currentTimeMillis();
+		    long currentTime  = CommonConstants.currentTimeMillis();
             long startTime  = currentTime;
 		    int timeDelta = 0;
 		    int saveTimeDelta = 0;
@@ -96,52 +94,52 @@ namespace MultiThreadingFramework
 		        // if the workerQueue contains rows, real less rows to ensure the queue total 
 		        // will be the configured batch size
 			    try {
-				    List rows = performQuery(wqLen);  // could set stopping = true
+				    List<String> rows = performQuery(wqLen);  // could set stopping = true
 				
-				    System.out.println("read "+rows.size()+ " qLen = " + wqLen);
-				    burst = rows.size() + getWorkerQLength(); // how many we are trying to process this second
+				    Console.WriteLine("read "+rows.Count + " qLen = " + wqLen);
+				    burst = rows.Count + getWorkerQLength(); // how many we are trying to process this second
 				    if (StopFileExists(serviceStopFile)) {
 					    stopping = true;   // only set flag to allow orderly shutdown
 				    } 
-                    for (int i = 0; i < workers.size(); i++) {
-                        workers.get(i).currentTime = currentTime; 
+                    for (int i = 0; i < workers.Count; i++) {
+                        workers.ElementAt(i).currentTime = currentTime; 
                     }
-				    if (rows.size() > 0) {
-				        for (int i = 0; i<rows.size();i++) {
+				    if (rows.Count > 0) {
+				        for (int i = 0; i<rows.Count;i++) {
 				            counter++;
-					        InputDTO dto = new InputDTO((String) rows.get(i), counter);
+					        InputDTO dto = new InputDTO((String) rows.ElementAt(i), counter);
 					        putToWorkerQ(dto);
-					        if (i>0 && i % workers.size() == 0) {
-					            Thread.sleep(queueLoadingPauseTimeValue);
+					        if (i>0 && i % workers.Count == 0) {
+					            Thread.Sleep(queueLoadingPauseTimeValue);
 					        }
 					    }
 				    }
-                    currentTime = System.currentTimeMillis(); 
+                    currentTime = CommonConstants.currentTimeMillis(); 
                     saveTimeDelta = 0;
 				    if (!workersStarted) {
 				        // set startTime again for closer approx of actual time to process batch
-				        startTime = System.currentTimeMillis();
-					    for (int i = 0; i < workers.size(); i++) {
-						    workers.get(i).start();
+				        startTime = CommonConstants.currentTimeMillis();
+					    for (int i = 0; i < workers.Count; i++) {
+						    workers.ElementAt(i).start();
 					    }
 					    workersStarted = true;
 				    } else {
-                        for (int i = 0; i < workers.size(); i++) {
+                        for (int i = 0; i < workers.Count; i++) {
                             // start any new ones
-                            if (!workers.get(i).isRunning()) {
-                                workers.get(i).start();
+                            if (!workers.ElementAt(i).isRunning()) {
+                                workers.ElementAt(i).start();
                             } else {
                                 // reset currentTime for workers
                                 // they can then sleep for the balance of the second if queue goes empty
-                                workers.get(i).currentTime = currentTime; 
+                                workers.ElementAt(i).currentTime = currentTime; 
                             }
                         }
 				    }
 				
 				    // allow the workers to do some work
-				    Thread.sleep(waitForWorkersTime); // this should not be made too small
+				    Thread.Sleep(waitForWorkersTime); // this should not be made too small
 				
-				    timeDelta = (int) (System.currentTimeMillis() - currentTime);
+				    timeDelta = (int) (CommonConstants.currentTimeMillis() - currentTime);
 				
 				    //************************************//
 				    while (timeDelta < almost1Second) {
@@ -153,16 +151,16 @@ namespace MultiThreadingFramework
 	                        }
 	                        if (!stopping && !tooManyWorkers  && timeDelta < processingTooFastTime) {
     	                        tooManyWorkers = true;
-    	                        System.out.println("too many workers @ "+timeDelta);
+    	                        Console.WriteLine("too many workers @ "+timeDelta);
 	                        }
 	                    }
 				        if (getResultQLength() > 0) {
 				            // process 1 entry in our input q
 				            processResultQItem();
 				        } else {
-				           Thread.sleep(housekeepingSleepTimeValue); 
+				           Thread.Sleep(housekeepingSleepTimeValue); 
 				        }
-				        timeDelta = (int) (System.currentTimeMillis() - currentTime);
+				        timeDelta = (int) (CommonConstants.currentTimeMillis() - currentTime);
 				    }
                     //************************************//
 
@@ -174,35 +172,35 @@ namespace MultiThreadingFramework
 	                            // process 1 entry in our input q
 	                            processResultQItem();
 	                        } else {
-	                           Thread.sleep(housekeepingSleepTimeValue); 
+	                           Thread.Sleep(housekeepingSleepTimeValue); 
 	                        }
 					    }
 					    // we get here, all Qs are empty
 					    // we can now shut down the workers
-                        updateTimestamp = System.currentTimeMillis();
+                        updateTimestamp = CommonConstants.currentTimeMillis();
                         long shutdownAbort = updateTimestamp + maxShutdownTimeValue;
-					    for (int i = 0; i < workers.size(); i++) {
-						    workers.get(i).stop();
+					    for (int i = 0; i < workers.Count; i++) {
+						    workers.ElementAt(i).stop();
 					    }
-					    Thread.sleep(300);
-					    boolean threadsStillRunning = true;
+					    Thread.Sleep(300);
+					    bool threadsStillRunning = true;
 					    while (threadsStillRunning) {
-					        if (System.currentTimeMillis() > shutdownAbort) {
-        					    for (int i = 0; i < workers.size(); i++) {
-        					        if (workers.get(i).isRunning()) {
-        					            workers.get(i).stopNow();
+					        if (CommonConstants.currentTimeMillis() > shutdownAbort) {
+        					    for (int i = 0; i < workers.Count; i++) {
+        					        if (workers.ElementAt(i).isRunning()) {
+        					            workers.ElementAt(i).stopNow();
         					        }
         					    }
 					        } else {
 					            threadsStillRunning = false;
-                                for (int i = 0; i < workers.size(); i++) {
-                                    if (workers.get(i).isRunning()) {
+                                for (int i = 0; i < workers.Count; i++) {
+                                    if (workers.ElementAt(i).isRunning()) {
                                         threadsStillRunning = true;
                                     }
                                 }
 					        }
                             if (threadsStillRunning) {
-                                Thread.sleep(100);
+                                Thread.Sleep(100);
                             }
 					    }
 				    } else { 
@@ -211,37 +209,37 @@ namespace MultiThreadingFramework
 				        wqLen = getWorkerQLength();
     				    burst -= wqLen;
     				    if (saveTimeDelta !=0) {
-    				        System.out.println("processed " + burst + " items in " + saveTimeDelta + " ms, loop time="+timeDelta);
+    				        Console.WriteLine("processed " + burst + " items in " + saveTimeDelta + " ms, loop time="+timeDelta);
     				    } else {
-    				        System.out.println("processed " + burst + " items in " + timeDelta + " ms");
+    				        Console.WriteLine("processed " + burst + " items in " + timeDelta + " ms");
     				        saveTimeDelta = timeDelta;
     				    }
                         if (wqLen > 0 || saveTimeDelta > processingTooSlowTime ) {
                             needMoreWorkers = true;
-                            System.out.println("more workers needed Q = " + wqLen + ", tDelta="+saveTimeDelta);
+                            Console.WriteLine("more workers needed Q = " + wqLen + ", tDelta="+saveTimeDelta);
                         }
     				    if (needMoreWorkers) {
-    				        int nbrNeeded = wqLen / workers.size();
+    				        int nbrNeeded = wqLen / workers.Count;
     				        if (nbrNeeded == 0) {
     				            nbrNeeded = 1;
     				        }
     				        for (int i = 0; i < nbrNeeded; i++) {
-        				        if (workers.size() < maxThreads) {
+        				        if (workers.Count < maxThreads) {
         				            // do not start them until we give them work
-    				                int n = workers.size();
+    				                int n = workers.Count;
     				                MultiThreadWorker mtw = new MultiThreadWorker("Worker "+ n, workerQueue, resultQueue); 
-                                    workers.add(mtw);
+                                    workers.Add(mtw);
         				        }
     				        }
     				        needMoreWorkers = false;
     				        tooManyWorkers = false;
     				    }
     				    if (tooManyWorkers) {
-    				        if (workers.size() > minThreads  && saveTimeDelta > 0 && wqLen == 0) {
+    				        if (workers.Count > minThreads  && saveTimeDelta > 0 && wqLen == 0) {
     				            // remove 1 worker
-    				            int n=workers.size() - 1;
-        				        MultiThreadWorker mtw = workers.get(n);
-    				            workers.remove(n);
+    				            int n=workers.Count - 1;
+        				        MultiThreadWorker mtw = workers.ElementAt(n);
+    				            workers.RemoveAt(n);
         				        mtw.stop(); // this allows it to shut down in an orderly fashion
         				                    // and return its result if it is processing
     				        }
@@ -249,19 +247,19 @@ namespace MultiThreadingFramework
     				    }
 				    }
 			    } catch (ThreadInterruptedException ex) {
-				    logger.warning("Thread was interrupted : " + ex.getMessage());
+				    Console.WriteLine("Thread was interrupted : " + ex.Message);
 			    }
 		    }
 		    closeDBConnection(StopFileExists(serviceStopFile));
 		    if (StopFileExists(serviceStopFile)) {
-		        stopFile.delete();
+		        System.IO.File.Delete(serviceStopFile );
 		    }
 
 	        long deltaT = updateTimestamp - startTime;
 	        double decSecs = ((double) deltaT) / 1000;
 	        int seconds = (int) (deltaT / 1000);
-	        double average = Math.floor(((double) counter * 1000) / ((double) deltaT)*100)/100;		// per second 2 decimal places
-	        System.out.println(" #### - Stopping - processed " + counter + " requests in "+ decSecs + " seconds" +
+	        double average = Math.Floor(((double) counter * 1000) / ((double) deltaT)*100)/100;		// per second 2 decimal places
+            Console.WriteLine(" #### - Stopping - processed " + counter + " requests in " + decSecs + " seconds" +
                     " ==> average = " + average + " per second");
 	    }
 
@@ -289,7 +287,7 @@ namespace MultiThreadingFramework
                 try
                 {
                     userDir = Environment.CurrentDirectory;
-                    simulFileName = userDir + "/scripts/address_data.csv";
+                    simulFileName = userDir + "/../../Resources/scripts/address_data.csv";
                     //simulFile = new File(simulFileName);
                     dbOutput = new System.IO.StreamReader(simulFileName);
 
@@ -328,9 +326,9 @@ namespace MultiThreadingFramework
             }
         }
 
-        private System.Collections.ArrayList performQuery(int qLen)
+        private List<String> performQuery(int qLen)
         {
-            System.Collections.ArrayList zx = new System.Collections.ArrayList();
+            List<String> zx = new List<String>();
             String s;
             int nbrToRead = requestsPerSecond - qLen;
             if (nbrToRead < minNbrToRead)
@@ -393,7 +391,16 @@ namespace MultiThreadingFramework
     
         public ServiceResult getFromResultQ() {
             lock (resultQueue) {
-                return (ServiceResult)resultQueue.Take(1);
+                ServiceResult sR;
+                bool gotOne =  resultQueue.TryDequeue(out sR);
+                if (gotOne)
+                {
+                    return sR;
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -407,6 +414,10 @@ namespace MultiThreadingFramework
             // process 1 entry in our input q
             Console.WriteLine("processing ResultQ len=" + getResultQLength());
             ServiceResult sr = getFromResultQ();
+            if (sr != null)  // do stuff with it
+            {
+                //Console.WriteLine("res " + sr.getResult() + ", rec=" + sr.getDto().RowNbr + ", data [" + sr.getDto().Data + "]");
+            }
             Thread.Sleep(pseudoProcessingSleepTimeValue);
         }
         public MultiThreadOrchestrator()

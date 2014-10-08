@@ -98,7 +98,7 @@ namespace MultiThreadingFramework
                 long t1 = CommonConstants.currentTimeMicros();
                 InputDTO dto;
                 bool gotit = workerQueue.TryDequeue(out dto); 
-                long t2 = CommonConstants.currentTimeMicros();
+                long t2 = CommonConstants.currentTimeMicros() - t1;
                 if (t2 > 10) { // 10th of milisecond
                     Console.WriteLine(threadName + " dequeue timeout="+t2+" micros");
                 }

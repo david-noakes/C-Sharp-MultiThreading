@@ -7,7 +7,7 @@ namespace MultiThreadingFramework
 {
     class OutputDTO
     {
-        private int rowNbr;
+        public int RowNbr {get; set;}
         private String data;
 
         public String Data
@@ -18,17 +18,17 @@ namespace MultiThreadingFramework
         public OutputDTO()
         {
             data = "";
-            rowNbr = 0;
+            RowNbr = 0;
         }
         public OutputDTO(String sData, int iNbr)
         {
             data = sData;
-            rowNbr = iNbr;
+            RowNbr = iNbr;
         }
         public OutputDTO(InputDTO dto)
         {
             data = dto.Data;
-            rowNbr = dto.RowNbr;
+            RowNbr = dto.RowNbr;
         }
 
     }

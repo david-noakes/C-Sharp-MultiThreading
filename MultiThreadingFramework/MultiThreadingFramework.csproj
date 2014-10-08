@@ -48,9 +48,14 @@
     <Compile Include="MultiThreadOrchestrator.cs" />
     <Compile Include="MultiThreadWorker.cs" />
     <Compile Include="OutputDTO.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="MultiThreadMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceResult.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\scripts\address_30.csv" />
+    <None Include="Resources\scripts\address_data.csv" />
+    <None Include="Resources\scripts\address_data_100.csv" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
