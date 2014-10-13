@@ -391,16 +391,12 @@ namespace MultiThreadingFramework
     
         public ServiceResult getFromResultQ() {
             lock (resultQueue) {
-                ServiceResult sR;
-                bool gotOne =  resultQueue.TryDequeue(out sR);
-                if (gotOne)
+                ServiceResult sR = null;
+                if (resultQueue.Count > 0)
                 {
-                    return sR;
+                    bool gotOne = resultQueue.TryDequeue(out sR);
                 }
-                else
-                {
-                    return null;
-                }
+                return sR;
             }
         }
 

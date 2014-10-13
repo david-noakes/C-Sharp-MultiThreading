@@ -90,22 +90,30 @@ namespace MultiThreadingFramework
 
         private InputDTO getFromWorkerQ() {
             lock (workerQueue) {
-                // take() and poll(timeout) can block
-                // the timeout is erratic - often at least 5 to 10 times the value
-                // polling can cause a blocking loop that can run for up to 500ms for all workers
-                // by checking the Q length before trying take(), we generally 
-                // have sufficient rows to satisfy all workers.
-                long t1 = CommonConstants.currentTimeMicros();
-                InputDTO dto;
-                bool gotit = workerQueue.TryDequeue(out dto); 
-                long t2 = CommonConstants.currentTimeMicros() - t1;
-                if (t2 > 10) { // 10th of milisecond
-                    Console.WriteLine(threadName + " dequeue timeout="+t2+" micros");
-                }
-                if (gotit)
+                if (workerQueue.Count() > 0)
                 {
-                    isProcessing = true;
-                    return dto;
+                    // take() and poll(timeout) can block
+                    // the timeout is erratic - often at least 5 to 10 times the value
+                    // polling can cause a blocking loop that can run for up to 500ms for all workers
+                    // by checking the Q length before trying take(), we generally 
+                    // have sufficient rows to satisfy all workers.
+                    long t1 = CommonConstants.currentTimeMicros();
+                    InputDTO dto;
+                    bool gotit = workerQueue.TryDequeue(out dto);
+                    long t2 = CommonConstants.currentTimeMicros() - t1;
+                    if (t2 > 10)
+                    { // 10th of milisecond
+                        Console.WriteLine(threadName + " dequeue timeout=" + t2 + " micros");
+                    }
+                    if (gotit)
+                    {
+                        isProcessing = true;
+                        return dto;
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 else
                 {
