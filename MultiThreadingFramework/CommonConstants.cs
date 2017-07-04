@@ -23,5 +23,11 @@ namespace MultiThreadingFramework
             return microseconds;
         }
 
+        public static String currentTimeExtended ()
+        {
+            String longish = DateTime.Now.Ticks.ToString();
+            String blah = DateTime.Now.ToString("HH:mm:ss:fff");
+            return blah;
+        }
     }
 }

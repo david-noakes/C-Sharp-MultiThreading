@@ -35,7 +35,7 @@ namespace MultiThreadingFramework
 		    ServiceResult res = null;
 		    OutputDTO outDTO = null;
 		    running = true;
-            Console.WriteLine("Running " +  threadName );
+            Console.WriteLine(CommonConstants.currentTimeExtended() + ": Running " +  threadName );
 	        try {
 	            currentTime = CommonConstants.currentTimeMillis();
 	    	    while (!stopping) {
@@ -45,7 +45,7 @@ namespace MultiThreadingFramework
                         dto = getFromWorkerQ();   // may return null
                         if (dto != null) {
 	                    // simulate processing = Let the thread sleep for a while.
-    	                    Console.WriteLine("Thread: " + threadName + ", row " + dto.RowNbr+ ", Qlen = " + getQLength() +
+    	                    Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread: " + threadName + ", row " + dto.RowNbr+ ", Qlen = " + getQLength() +
     	                                       ", working for " + pauseTime);
         	                Thread.Sleep(pauseTime);
         	                // send back the results
@@ -58,26 +58,26 @@ namespace MultiThreadingFramework
 	            	    long endTime = CommonConstants.currentTimeMillis();
 	            	    int deltaT = (int) (endTime - currentTime);
                         if (deltaT < 100) { // less than a tenth second has elapsed
-                            Console.WriteLine("Thread: " + threadName + ", Qlen = " + getQLength() + ", sleeping for " + sleepAdj);
+                            Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread: " + threadName + ", Qlen = " + getQLength() + ", sleeping for " + sleepAdj);
                             Thread.Sleep(sleepAdj);
                         } else if (deltaT < almost1Second) { // less than a second has elapsed
                             sleepTime = 1000 - deltaT - sleepAdj;
                             if (sleepTime < 0) {
                                 sleepTime = smallSleepTime;
                             }
-	            		    Console.WriteLine("Thread: " + threadName + ", Qlen = " + getQLength() + ", sleeping for " + sleepTime);
+	            		    Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread: " + threadName + ", Qlen = " + getQLength() + ", sleeping for " + sleepTime);
             		        Thread.Sleep(sleepTime);
 	            	    } else {
-	            		    Console.WriteLine("Thread: " + threadName + ", Qlen = " + getQLength() + ", elapsed " + deltaT + ", sleeping for " + smallSleepTime);
+	            		    Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread: " + threadName + ", Qlen = " + getQLength() + ", elapsed " + deltaT + ", sleeping for " + smallSleepTime);
 	            		    Thread.Sleep(smallSleepTime);
 	            	    }
             		    //currentTime = System.currentTimeMillis();
 	                }
 	    	    }  
 	         } catch (ThreadInterruptedException e) {
-	             Console.WriteLine("Thread " +  threadName + " interrupted.");
+	             Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread " +  threadName + " interrupted.");
 	         }
-             Console.WriteLine("Thread " + threadName + " exiting.");
+             Console.WriteLine(CommonConstants.currentTimeExtended() + ": Thread " + threadName + " exiting.");
 	         running = false;
         }
 
@@ -103,7 +103,7 @@ namespace MultiThreadingFramework
                     long t2 = CommonConstants.currentTimeMicros() - t1;
                     if (t2 > 10)
                     { // 10th of milisecond
-                        Console.WriteLine(threadName + " dequeue timeout=" + t2 + " micros");
+                        Console.WriteLine(CommonConstants.currentTimeExtended() + ": " + threadName + " dequeue timeout=" + t2 + " micros");
                     }
                     if (gotit)
                     {
@@ -131,7 +131,7 @@ namespace MultiThreadingFramework
     
 
         public void start()  {
-    	    Console.WriteLine("Starting " +  threadName);
+    	    Console.WriteLine(CommonConstants.currentTimeExtended() + ": Starting " +  threadName);
 	        if (t == null) {
                 t = new Thread(doWork);
                 t.Start ();
@@ -162,7 +162,7 @@ namespace MultiThreadingFramework
         public MultiThreadWorker(String name, ConcurrentQueue<InputDTO> wQ, ConcurrentQueue<ServiceResult> rQ)
         {
 		    threadName = name;
-            Console.WriteLine("Creating " + threadName);		
+            Console.WriteLine(CommonConstants.currentTimeExtended() + ": Creating " + threadName);		
 		    workerQueue = wQ;
 		    resultQueue = rQ;
         }

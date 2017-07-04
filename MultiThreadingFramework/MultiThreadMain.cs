@@ -17,7 +17,7 @@ using System.Text;
  *    in different threads uses different locks, and unsynchronized access can leave the queue in an
  *    inconsistent state
  * 6. the orchestrator will add additional workers if it is unable to reach the required processing rate
- *    subject to a maxTrheads limit
+ *    subject to a maxThreads limit
  * 7. if the processing loop has all workers idle in under 800 milliseconds, the orchestrator will
  *    remove 1 worker (subject to a minThreads limit)   
  * 8. the loop can be stopped by the presence of a stop file, or endofdata
@@ -33,7 +33,7 @@ namespace MultiThreadingFramework
         {
             MultiThreadOrchestrator orchestrator = new MultiThreadOrchestrator();
             orchestrator.Orchestrate();
-            Console.WriteLine("Processing Finished");
+            Console.WriteLine(CommonConstants.currentTimeExtended() + ": Processing Finished");
         }
 
     }
