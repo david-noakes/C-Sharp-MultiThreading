@@ -39,7 +39,7 @@ namespace MultiThreadingFramework
 	        try {
 	            currentTime = CommonConstants.currentTimeMillis();
 	    	    while (!stopping) {
-                    int pauseTime = rand.Next(51)+180; // random web request time 180..230
+                    int pauseTime = rand.Next(71)+170; // random web request time 170..240
 	                if (!workerQueue.IsEmpty) {
 	                    // prevent blocking loop by checking Q length first
                         dto = getFromWorkerQ();   // may return null
